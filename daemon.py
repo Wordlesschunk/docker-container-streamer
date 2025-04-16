@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request
+import os
+from fastapi import FastAPI, HTTPException
 from docker import DockerClient
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,9 +16,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Connect to Docker
+# Get container name from environment variable
+container_name = os.getenv("CONTAINER_NAME")
+if not container_name:
+    raise RuntimeError("Environment variable CONTAINER_NAME is required")
+
+# Connect to Docker and get container
 client = DockerClient(base_url='unix://var/run/docker.sock')
-container = client.containers.get("your_container_name")  # Replace with your actual container name
+try:
+    container = client.containers.get(container_name)
+except Exception as e:
+    raise RuntimeError(f"Could not find container '{container_name}'") from e
 
 class Command(BaseModel):
     cmd: str
