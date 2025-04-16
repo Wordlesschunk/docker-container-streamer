@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Docker Live Logs & Commands</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #111; color: #eee; }
+    textarea, input { width: 100%; font-family: monospace; margin-top: 10px; }
+    button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Live Logs</h1>
+  <pre id="logOutput" style="height: 300px; overflow-y: scroll; background: #222; padding: 10px;"></pre>
+
+  <h2>Run Command (Live)</h2>
+  <input type="text" id="commandInput" placeholder="Enter a command (e.g., ping google.com)">
+  <button onclick="sendCommand()">Run</button>
+  <pre id="commandOutput" style="background: #222; padding: 10px;"></pre>
+
+  <script>
+    const API_URL = "http://localhost:8000"; // Change to your daemon's IP if remote
+
+    function streamLogs() {
+      const logOutput = document.getElementById('logOutput');
+      const eventSource = new EventSource(`${API_URL}/logs/stream`);
+      eventSource.onmessage = function(event) {
+        logOutput.textContent += event.data + "\n";
+        logOutput.scrollTop = logOutput.scrollHeight;
+      };
+    }
+
+    function sendCommand() {
+      const commandOutput = document.getElementById('commandOutput');
+      const cmd = document.getElementById('commandInput').value;
+      commandOutput.textContent = '';
+      
+      const eventSource = new EventSource(`${API_URL}/exec/stream?cmd=${encodeURIComponent(cmd)}`);
+      eventSource.onmessage = function(event) {
+        commandOutput.textContent += event.data + "\n";
+        commandOutput.scrollTop = commandOutput.scrollHeight;
+      };
+    }
+
+    streamLogs();
+  </script>
+</body>
+</html>
